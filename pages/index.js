@@ -277,7 +277,7 @@ export default function Home() {
   const videoRef = React.useRef(null);
   useEffect(() => {
     setDynamicTheme(config.theme[theme].dynamic);
-    upgrade_app('3.0.0', () => {
+    upgrade_app('3.0.1', () => {
       EffThis.set_theme('neon');
       setDynamicTheme(false);
     })
@@ -456,12 +456,6 @@ export default function Home() {
                   已收录的歌曲 {song_list.length} 首
                 </p>
                 <p>Livestream&nbsp;#25788785</p>
-                <RetroButton onClick={() => {
-                    setTheme('light');
-                  }}
-                >
-                  <div className='p-2 text-[1rem]'>回到旧版</div>
-                </RetroButton>
               </div>
             </RetroWindow>
             <RetroWindow
