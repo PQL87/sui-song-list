@@ -24,7 +24,7 @@
     "copy-to-clipboard": "^3.3.1",
     "exceljs": "^4.4.0",
     "framer-motion": "^11.11.11",
-    "next": "^14.2.5",
+    "next": "^16.0.7",
     "next-themes": "^0.3.0",
     "postcss": "^8.4.40",
     "react": "^18",
