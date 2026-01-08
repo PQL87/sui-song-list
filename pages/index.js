@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState, useRef, useSyncExternalStore } from 'react'
+import React, { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import Head from 'next/head'
 import Link from 'next/link'
@@ -7,9 +7,8 @@ import Image from "next/legacy/image"
 import styles from '../styles/Home.module.css'
 import 'react-toastify/dist/ReactToastify.css'
 
-import { Col, Container, Form } from 'react-bootstrap'
+import { Container } from 'react-bootstrap'
 
-import Title from '../components/Title.component'
 import SongList from '../components/SongList.component'
 import BiliPlayerModal from '../components/BiliPlayerModal.component'
 import SongListFilter from '../components/SongListFilter.component'
@@ -19,30 +18,21 @@ import FeaturedSongList from '../components/FeaturedSongList.component'
 
 import imageLoader from '../utils/ImageLoader'
 
-import config, { theme } from '../config/constants'
-import { filterSong } from '../config/constants'
+import config, { filterSong, theme } from '../config/constants'
 
 import { 
   RetroWindow, 
-  RetroButton,
   RetroWindowContainer,
 } from '../components/retro/RetroWindow.component'
 import RetroSongList from '../components/retro/RetroSongList.component'
-import clsx from 'clsx'
 import { motion } from 'framer-motion'
 
 import { 
   eff_get, 
   eff_set, 
-  get_theme, 
-  is_favorite_song, 
-  set_theme, 
-  favorite_date,
   migrate_localstorage,
   upgrade_app
 } from '../config/controllers'
-
-import styled, { css } from "styled-components";
 
 import { song_list } from '../config/song_list'
 
@@ -63,13 +53,135 @@ import sui_neon from '../public/assets/images/sui_neon.webp'
 import sui_wodemaya from '../public/assets/images/sui_wodemaya.png'
 
 import {
-  BsPalette2
-} from 'react-icons/bs'
-import {
   HiChevronUp
 } from 'react-icons/hi'
 
 import { useTheme } from 'next-themes'
+
+const PRELOAD_LINKS = [
+  { href: '/assets/images/emoticon_love.webp', as: 'image' },
+  { href: '/assets/images/emoticon_stars_in_your_eyes.webp', as: 'image' },
+  { href: '/assets/images/emoticon_bgs1314baobaomuamualovelove.webp', as: 'image' },
+  { href: '/assets/images/bgs1314baobaomuamualovelove.gif', as: 'image', type: 'image/gif' },
+  { href: '/assets/images/question_mark.gif', as: 'image', type: 'image/gif' },
+  { href: '/api/v2/avatar', as: 'image', type: 'image/webp' },
+  { href: '/assets/images/theme/header_shining_front.png', as: 'image', type: 'image/png' },
+];
+
+const THEME_HEADER_IMAGES = {
+  dark: headerImageDark,
+  light: headerImage,
+  flower: headerImageFlower,
+  marvelous: headerImageMarvelous,
+  brisk: headerImageBrisk,
+  idol: headerImageIdol,
+  lazy: headerImageLazy,
+  shining: headerImageShining,
+};
+
+const DYNAMIC_THEME_SOURCES = {
+  brisk: [
+    { src: '/api/v2/theme/dynamic?theme=brisk.mp4', type: 'video/mp4' },
+    { src: '/api/v2/theme/dynamic?theme=brisk.webm', type: 'video/webm' },
+  ],
+  idol: [
+    { src: '/api/v2/theme/dynamic?theme=idol.mp4', type: 'video/mp4' },
+    { src: '/api/v2/theme/dynamic?theme=idol.webm', type: 'video/webm' },
+  ],
+};
+
+const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+const INACTIVE_TIMEOUT_MS = 3 * 1000;
+const RANDOM_WINDOW_COUNT = 0x100;
+
+const TELL_ME_MESSAGES = [
+  "你在干什么？",
+  "我会看着你",
+  "你去别人的直播间了吗？",
+  "没说话的都死刑",
+  "不准送别人五朵小花花",
+  "降低你的权重",
+  "不准和别人说晚安",
+  "总感觉你今天好像变冷淡了",
+  "你要一直喜欢我好吗",
+  "快说啊",
+  "一天只能跟除我以外的一个人，说一句话",
+  "你不准看别的虚拟主播",
+  "你不是跟我签订了契约了吗？",
+  "悄悄离开的你在干什么？",
+  "我刚刚在窗外趴了好久，怎么这么喜欢乱动呢？",
+  "不要这么随便就哭啊",
+  "你上次断的肋骨应该还没好完吧",
+  "想跑啊想离开我吧",
+  "你要干嘛去啊，说啊讲啊",
+  "你知不知道啊？",
+  "你要乖乖待在我的身边",
+  "你要听话",
+  "不会说话是吧？",
+  "哭什么",
+  "你为什么不听我的",
+  "今天有减少对我的喜欢吗",
+  "你跟别人说晚安只能说晚安句号",
+  "别人有事找你你只能说嗯点头",
+  "出轨到别的地方了吗",
+  "我有点小手段可以查出来",
+  "你已经对我的生活没有兴趣了",
+  "你愿意错过今天的岁己",
+  "说不定岁己今天情绪特别低落",
+  "我今天很想被安慰，安慰我的人不是你",
+  "我的不安",
+  "你也不知道我今天干了什么",
+  "我今天讲了什么你可能也不知道"
+];
+
+const NEON_IMAGE_WINDOWS = [
+  { title: "SUI_1.png", className: "relative top-[36rem] left-[25rem] w-[50rem]", src: sui_new, alt: "sui_new" },
+  { title: "SUI_MIXUP.png", className: "relative top-[10rem] left-[-10rem] w-[50rem]", src: sui_mixup, alt: "sui_mixup" },
+  { title: "SUI_SHINING.png", className: "relative top-[-65rem] left-[5rem] w-[30rem]", src: headerImageShining, alt: "sui_shining" },
+  { title: "SUI_JULY_2025.png", className: "relative top-[-160rem] left-[-5rem] w-[20rem]", src: sui_neon, alt: "sui_neon" },
+];
+
+const passthroughLoader = ({ src }) => src;
+const getHeaderImage = (themeName) => THEME_HEADER_IMAGES[themeName] || headerImage;
+const getShiningHeaderImage = (themeName) => (
+  themeName === 'shining' ? headerImageShiningFront : headerImageShining
+);
+const pickRandom = (messages) => messages[Math.floor(Math.random() * messages.length)];
+const createRandomWindows = (messages, count) => Array.from({ length: count }, () => ({
+  title: pickRandom(messages),
+  content: pickRandom(messages),
+}));
+
+function renderDynamicSources(themeName) {
+  const sources = DYNAMIC_THEME_SOURCES[themeName];
+  if (!sources) return null;
+  return sources.map((source) => (
+    <source key={source.src} src={source.src} type={source.type} />
+  ));
+}
+
+function PageHead({ title, includePreloads = false }) {
+  return (
+    <Head>
+      <title>{title}</title>
+      <meta
+        name="keywords"
+        content={`B站,bilibili,哔哩哔哩,vtuber,虚拟主播,电台唱见,歌单,${config.Name}`}
+      />
+      <meta name="description" content={`${config.Name}的歌单`} />
+      <link rel="icon" type="image/x-icon" href="/favicon.png" />
+      {includePreloads && PRELOAD_LINKS.map((link) => (
+        <link
+          key={link.href}
+          rel="preload"
+          href={link.href}
+          as={link.as}
+          {...(link.type ? { type: link.type } : {})}
+        />
+      ))}
+    </Head>
+  );
+}
 
 const BackgroundView = () => {
   return (
@@ -101,20 +213,9 @@ export function useSuiStatus() {
   return useSyncExternalStore(subscribe, getSuiSnapshot, () => []);
 }
 
-function ActivityImage(props) {
-  const INACTIVE_TIMEOUT = 3 * 1000;
-
+function ActivityImage({ selectTheme }) {
   const [isActive, setIsActive] = useState(false);
-  const [initActive, setInitActive] = useState(false);
   const timerRef = useRef(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setInitActive(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const handleActivity = () => {
@@ -124,24 +225,20 @@ function ActivityImage(props) {
       }
       timerRef.current = window.setTimeout(() => {
         setIsActive(false);
-      }, INACTIVE_TIMEOUT);
+      }, INACTIVE_TIMEOUT_MS);
     };
 
-    const events = [
-      'mousedown',
-      'mousemove',
-      'keydown',
-      'scroll',
-      'touchstart',
-    ];
-
-    events.forEach((ev) => window.addEventListener(ev, handleActivity));
+    ACTIVITY_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, handleActivity);
+    });
 
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
-      events.forEach((ev) => window.removeEventListener(ev, handleActivity));
+      ACTIVITY_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, handleActivity);
+      });
     };
   }, []);
 
@@ -150,17 +247,82 @@ function ActivityImage(props) {
   return (
     <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
       <Image
-        src={props.selectTheme(themeName)}
-        className={`header-image-front transition-opacity duration-500 header-image-front ${!isActive ? 'z-[100] opacity-100' : 'opacity-0 pointer-events-none}'}`}
+        src={selectTheme(themeName)}
+        className={`header-image-front transition-opacity duration-500 ${!isActive ? 'z-[100] opacity-100' : 'opacity-0 pointer-events-none'}`}
         alt="header"
         unoptimized
         layout="responsive"
-        loader={({ src }) => src}
+        loader={passthroughLoader}
         onLoad={() => {
           setIsActive(false);
         }}
       />
     </div>
+  );
+}
+
+function NeonImageWindow({ title, className, src, alt, onClose }) {
+  return (
+    <RetroWindow title={title} className={className} onClose={onClose}>
+      <div>
+        <Image
+          src={src}
+          alt={alt}
+          width={0}
+          height={0}
+          loader={passthroughLoader}
+          sizes="100vw"
+          layout="responsive"
+          objectFit="cover"
+          unoptimized
+        />
+      </div>
+    </RetroWindow>
+  );
+}
+
+function NeonBackground({ suiStatus }) {
+  return (
+    <div className="fixed inset-0">
+      <div className={suiStatus === true ? "absolute left-[30%] top-0 w-full" : "absolute left-[20%] top-0 w-full"}>
+        <Image
+          src={suiStatus === true ? sui_wodemaya : sui}
+          alt="sui"
+          loader={passthroughLoader}
+          className="absolute w-full h-full object-cover"
+        />
+      </div>
+    </div>
+  );
+}
+
+function HeaderMedia({ dynamicTheme, theme, themeName, videoRef }) {
+  if (!dynamicTheme) {
+    return (
+      <Image
+        src={getHeaderImage(theme)}
+        className="header-image"
+        alt="header"
+        unoptimized
+        layout="responsive"
+        loader={passthroughLoader}
+      />
+    );
+  }
+
+  return (
+    <video
+      autoPlay
+      ref={videoRef}
+      loop
+      muted
+      playsInline
+      disablePictureInPicture={true}
+      className="header-image relative right-0 top-0"
+      width="100%"
+    >
+      {renderDynamicSources(themeName)}
+    </video>
   );
 }
 
@@ -274,7 +436,7 @@ export default function Home() {
   }, [EffThis]);
 
   const [dynamicTheme, setDynamicTheme] = useState(true);
-  const videoRef = React.useRef(null);
+  const videoRef = useRef(null);
   useEffect(() => {
     setDynamicTheme(config.theme[theme].dynamic);
     upgrade_app('3.0.1', () => {
@@ -299,235 +461,100 @@ export default function Home() {
   const title = `${config.Name}的歌单`;
   const liverName = config.Name;
   
-  const [variant, setVariant] = useState('neon'); // 'neon' | 'classic'
+  const [variant] = useState('neon'); // 'neon' | 'classic'
   const [liveWindowsCount, setLiveWindowsCount] = useState(6);
   const [closeMe, setCloseMe] = useState(false);
 
-  let randomGeneratedWindows = [];
-  const tellme = [
-    "你在干什么？",
-    "我会看着你",
-    "你去别人的直播间了吗？",
-    "没说话的都死刑",
-    "不准送别人五朵小花花",
-    "降低你的权重",
-    "不准和别人说晚安",
-    "总感觉你今天好像变冷淡了",
-    "你要一直喜欢我好吗",
-    "快说啊",
-    "一天只能跟除我以外的一个人，说一句话",
-    "你不准看别的虚拟主播",
-    "你不是跟我签订了契约了吗？",
-    "悄悄离开的你在干什么？",
-    "我刚刚在窗外趴了好久，怎么这么喜欢乱动呢？",
-    "不要这么随便就哭啊",
-    "你上次断的肋骨应该还没好完吧",
-    "想跑啊想离开我吧",
-    "你要干嘛去啊，说啊讲啊",
-    "你知不知道啊？",
-    "你要乖乖待在我的身边",
-    "你要听话",
-    "不会说话是吧？",
-    "哭什么",
-    "你为什么不听我的",
-    "今天有减少对我的喜欢吗",
-    "你跟别人说晚安只能说晚安句号",
-    "别人有事找你你只能说嗯点头",
-    "出轨到别的地方了吗",
-    "我有点小手段可以查出来",
-    "你已经对我的生活没有兴趣了",
-    "你愿意错过今天的岁己",
-    "说不定岁己今天情绪特别低落",
-    "我今天很想被安慰，安慰我的人不是你",
-    "我的不安",
-    "你也不知道我今天干了什么",
-    "我今天讲了什么你可能也不知道"
-  ]
-
-  for (let i = 0; i < 0x100; ++i) {
-    const randomTitle = tellme[Math.floor(Math.random() * tellme.length)];
-    const randomContent = tellme[Math.floor(Math.random() * tellme.length)];
-    randomGeneratedWindows.push({
-      title: randomTitle,
-      content: randomContent,
-    });
-  }
-
-  useEffect(() => {
-    console.log('liveWindowsCount: ', liveWindowsCount);
-    if (liveWindowsCount > 0) return;
-    console.log('Generating random windows...');
-  });
+  const randomGeneratedWindows = createRandomWindows(TELL_ME_MESSAGES, RANDOM_WINDOW_COUNT);
+  const closeLiveWindow = () => setLiveWindowsCount((count) => count - 1);
 
   const suiStatus = useSuiStatus();
     
-  if (themeName == 'neon') {
+  if (themeName === 'neon') {
     return (
       <div data-theme={theme}>
-        <Head>
-          <title>{title}</title>
-          <meta
-            name="keywords"
-            content={`B站,bilibili,哔哩哔哩,vtuber,虚拟主播,电台唱见,歌单,${config.Name}`}
-          />
-          <meta name="description" content={`${config.Name}的歌单`} />
-          <link rel="icon" type="image/x-icon" href="/favicon.png"></link>
-        </Head>
-          <div className="fixed inset-0">
-            <div className={suiStatus === true ? "absolute left-[30%] top-0 w-full" : "absolute left-[20%] top-0 w-full"}>
-              <Image
-                src={suiStatus === true ? sui_wodemaya : sui}
-                alt='sui'
-                loader={({ src }) => src}
-                className="absolute w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        <section className={"main-section absolute"}>
+        <PageHead title={title} />
+        <NeonBackground suiStatus={suiStatus} />
+        <section className="main-section absolute">
           <RetroWindowContainer>
-          {liveWindowsCount > 0 && (
-            <>
-            <RetroWindow
-              title={"SUI_1.png"}
-              className="relative top-[36rem] left-[25rem] w-[50rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <div className="">
-                <Image
-                  src={sui_new}
-                  alt="sui_new"
-                  width={0} height={0} 
-                  loader={({ src }) => src}
-                  sizes='100vw' layout='responsive'
-                  objectFit='cover' unoptimized
+            {liveWindowsCount > 0 && (
+              <>
+                {NEON_IMAGE_WINDOWS.slice(0, 3).map((window) => (
+                  <NeonImageWindow
+                    key={window.title}
+                    {...window}
+                    onClose={closeLiveWindow}
+                  />
+                ))}
+                <RetroWindow
+                  title={"MUSIC.exe"}
+                  className="relative top-[-50rem]"
+                  onClose={closeLiveWindow}
+                >
+                  <RetroSongList songList={song_list} />
+                </RetroWindow>
+                <RetroWindow
+                  variant={variant}
+                  title={"README.md"}
+                  className="relative w-[30rem] top-[-130rem]"
+                  onClose={closeLiveWindow}
+                >
+                  <div className="space-y-2 text-[1.3rem]">
+                    <p className="text-title">{liverName}</p>
+                    <p>已收录的歌曲 {song_list.length} 首</p>
+                    <p>Livestream&nbsp;#25788785</p>
+                  </div>
+                </RetroWindow>
+                <NeonImageWindow
+                  {...NEON_IMAGE_WINDOWS[3]}
+                  onClose={closeLiveWindow}
                 />
-              </div>
-            </RetroWindow>
-            <RetroWindow
-              title={"SUI_MIXUP.png"}
-              className="relative top-[10rem] left-[-10rem] w-[50rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <div className="">
-                <Image
-                  src={sui_mixup}
-                  alt="sui_new"
-                  width={0} height={0}
-                  loader={({ src }) => src}
-                  sizes='100vw' layout='responsive'
-                  objectFit='cover' unoptimized
-                />
-              </div>
-            </RetroWindow>
-            <RetroWindow
-              title={"SUI_SHINING.png"}
-              className="relative top-[-65rem] left-[5rem] w-[30rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <div className="">
-                <Image
-                  src={headerImageShining}
-                  alt="sui_shining"
-                  width={0} height={0}
-                  loader={({ src }) => src}
-                  sizes='100vw' layout='responsive'
-                  objectFit='cover' unoptimized
-                />
-              </div>
-            </RetroWindow>
-            <RetroWindow
-              title={"MUSIC.exe"}
-              className="relative top-[-50rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <RetroSongList 
-                songList={song_list}
-              />
-            </RetroWindow>
-            <RetroWindow
-              variant={variant}
-              title={"README.md"}
-              className="relative w-[30rem] top-[-130rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <div className="space-y-2 text-[1.3rem]">
-                <p className="text-title">{liverName}</p>
-                <p>
-                  已收录的歌曲 {song_list.length} 首
-                </p>
-                <p>Livestream&nbsp;#25788785</p>
-              </div>
-            </RetroWindow>
-            <RetroWindow
-              title={"SUI_JULY_2025.png"}
-              className="relative top-[-160rem] left-[-5rem] w-[20rem]"
-              onClose={() => setLiveWindowsCount(c => c - 1)}
-            >
-              <div className="">
-                <Image
-                  src={sui_neon}
-                  alt="sui_neon"
-                  width={0} height={0}
-                  loader={({ src }) => src}
-                  sizes='100vw' layout='responsive'
-                  objectFit='cover' unoptimized
-                />
-              </div>
-            </RetroWindow>
-            </>
+              </>
             )}
           </RetroWindowContainer>
-          <>
-            {
-              liveWindowsCount == 0 && (
-                <RetroWindow
-                  title={"你在干什么"}
-                  onClose={() => {
-                    setCloseMe(true);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('sui', JSON.stringify(true));
-                    }
-                  }}
-                >
-                  <div className="p-4">
-                    <p>饼干岁 你在吗？</p>
-                  </div>
-                </RetroWindow>
-              )
-            }
-          </>
+          {liveWindowsCount === 0 && (
+            <RetroWindow
+              title={"你在干什么"}
+              onClose={() => {
+                setCloseMe(true);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('sui', JSON.stringify(true));
+                }
+              }}
+            >
+              <div className="p-4">
+                <p>饼干岁 你在吗？</p>
+              </div>
+            </RetroWindow>
+          )}
         </section>
-        {
-          closeMe && (
-            randomGeneratedWindows.map((window, index) => (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="absolute"
-                style={{ top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, position: 'absolute' }}
-                key={index}
-              >
-                <RetroWindow
-                  key={index}
-                  title={window.title}
-                  className="w-[30rem] absolute"
-                  onClose={() => setLiveWindowsCount(c => c - 1)}
-                >
-                  <div className="p-4">
-                    {
-                      Math.random() < 0.5 ? (
-                        <p className="text-neonAccent">{window.content}</p>
-                      ) : (
-                        <p>{window.content}</p>
-                      )
-                    }
-                  </div>
-                </RetroWindow>
-              </motion.div>
-            ))
-          )
-        }
+        {closeMe && randomGeneratedWindows.map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="absolute"
+            style={{
+              top: `${Math.random() * 100}vh`,
+              left: `${Math.random() * 100}vw`,
+            }}
+          >
+            <RetroWindow
+              title={item.title}
+              className="w-[30rem] absolute"
+              onClose={closeLiveWindow}
+            >
+              <div className="p-4">
+                {Math.random() < 0.5 ? (
+                  <p className="text-neonAccent">{item.content}</p>
+                ) : (
+                  <p>{item.content}</p>
+                )}
+              </div>
+            </RetroWindow>
+          </motion.div>
+        ))}
       </div>
     );
   }
@@ -535,125 +562,23 @@ export default function Home() {
   return (
     <div data-theme={theme}>
       <BackgroundView />
-      <Head>
-        <title>{title}</title>
-        <meta
-          name="keywords"
-          content={`B站,bilibili,哔哩哔哩,vtuber,虚拟主播,电台唱见,歌单,${config.Name}`}
-        />
-        <meta name="description" content={`${config.Name}的歌单`} />
-        <link rel="icon" type="image/x-icon" href="/favicon.png"></link>
-        <link
-          rel="preload"
-          href="/assets/images/emoticon_love.webp"
-          as="image"
-        />
-        <link
-          rel="preload"
-          href="/assets/images/emoticon_stars_in_your_eyes.webp"
-          as="image"
-        />
-        <link
-          rel="preload"
-          href="/assets/images/emoticon_bgs1314baobaomuamualovelove.webp"
-          as="image"
-        />
-        <link
-          rel="preload"
-          href="/assets/images/bgs1314baobaomuamualovelove.gif"
-          as="image"
-          type="image/gif"
-        />
-        <link
-          rel="preload"
-          href="/assets/images/question_mark.gif"
-          as="image"
-          type="image/gif"
-        />
-        <link
-          rel="preload"
-          href='/api/v2/avatar'
-          as="image"
-          type='image/webp'
-        />
-        <link
-          rel="preload"
-          href='/assets/images/theme/header_shining_front.png'
-          as="image"
-          type='image/png'
-        />
-      </Head>
+      <PageHead title={title} includePreloads />
 
       <div
         className="z-[100] bg-gradient-to-b 
         from-transparent to-[30rem] w-screen"
       >
         <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
-          { !dynamicTheme ?
-            <Image
-              src={(() => {
-                switch (theme) {
-                  case 'dark': return headerImageDark;
-                  case 'light': return headerImage;
-                  case 'flower': return headerImageFlower;
-                  case 'marvelous': return headerImageMarvelous;
-                  case 'brisk': return headerImageBrisk;
-                  case 'idol': return headerImageIdol;
-                  case 'lazy': return headerImageLazy;
-                  case 'shining': return headerImageShining;
-                  default: return headerImage;
-                }
-              })()}
-              className="header-image"
-              alt="header"
-              unoptimized
-              layout="responsive"
-              loader={({ src }) => src}
-            />
-            : <video
-                autoPlay
-                ref={videoRef}
-                loop
-                muted
-                playsInline
-                disablePictureInPicture={true}
-                className="header-image relative right-0 top-0"
-                width="100%"
-              >
-                {(
-                  () => {
-                    switch (themeName) {
-                      case 'brisk':
-                        return (
-                          <>
-                            <source src="/api/v2/theme/dynamic?theme=brisk.mp4" type="video/mp4" />
-                            <source src="/api/v2/theme/dynamic?theme=brisk.webm" type="video/webm" />
-                          </>
-                        )
-                      case 'idol':
-                        return (
-                          <>
-                            <source src="/api/v2/theme/dynamic?theme=idol.mp4" type="video/mp4" />
-                            <source src="/api/v2/theme/dynamic?theme=idol.webm" type="video/webm" />
-                          </>
-                        )
-                  
-                    }    
-                  }
-                )()}
-              </video>
-          }
+          <HeaderMedia
+            dynamicTheme={dynamicTheme}
+            theme={theme}
+            themeName={themeName}
+            videoRef={videoRef}
+          />
         </div>
         {
           themeName === 'shining' &&
-          <ActivityImage selectTheme={(themeName) => {
-            switch (themeName) {
-              case 'shining':
-                return headerImageShiningFront;
-              default:
-                return headerImageShining;
-            }
-          }}/>
+          <ActivityImage selectTheme={getShiningHeaderImage} />
         }
         <section className={"main-section"}>
           <HeaderView props={[EffThis]}/>
@@ -728,46 +653,14 @@ const FilteredList = memo(function FilteredList({ props: [ filter_state, searchB
   EffThis.set_current_album(filteredSongList);
 
   return (
-    <>
-      <SongListWrapper props = {[ filteredSongList, EffThis ]}/>
-    </>
-  )
+    <SongListWrapper props = {[ filteredSongList, EffThis ]}/>
+  );
 }, (prev, next) => {
   if (Object.is(prev, next)) return true;
-  
-  const prev_keys = Object.keys(prev);
-  const next_keys = Object.keys(next);
-  
-  if (prev_keys.length !== next_keys.length) return false;
+  if (!Array.isArray(prev.props) || !Array.isArray(next.props)) return false;
+  if (prev.props.length !== next.props.length) return false;
 
-  const skips = { props: 1 };
-
-  // props
-  if (Array.isArray(prev.props) && Array.isArray(next.props)) {
-    if (prev.props.length !== next.props.length) return false;
-    for (const [idx, prop] of Object.entries(prev.props)) {
-      if (!Object.is(prop, prev.props[idx])) {
-        console.log('not equal when iterating!!!');
-      }
-      if (!Object.is(prop, next.props[idx])) return false;
-    }
-  }
-
-  let flags = {};
-
-  for (const key of prev_keys) {
-    if (skips[key]) continue;
-    if (!Object.is(prev[key], next[key])) return false;
-    flags[key] = 1;
-  }
-
-  for(const key of next_keys) {
-    if (skips[key] || flags[key]) continue;
-    if (!Object.is(next[key], prev[key])) return false;
-  }
-
-  console.log('result: equal');
-  return true;
+  return prev.props.every((value, index) => Object.is(value, next.props[index]));
 });
 
 /** 歌单表格 */
@@ -783,14 +676,19 @@ function FixedTool() {
   const [to_top_btn_is_visible, set_to_top_btn_visibility] = useState(false);
 
   useEffect(() => {
-    //检测窗口滚动
-    window.addEventListener("scroll", () => {
+    const handleScroll = () => {
       if (window.scrollY > 600) {
         set_to_top_btn_visibility(true);
       } else {
         set_to_top_btn_visibility(false);
       }
-    });
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
   
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
