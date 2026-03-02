@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @font-face {
+  font-display: swap;
   font-family: 'pixel';
   src: url('/font/fusion-pixel.woff2') format('woff2');
 }

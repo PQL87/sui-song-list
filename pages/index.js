@@ -293,6 +293,7 @@ function HeaderMedia({ theme }) {
         className="header-image"
         alt="header"
         unoptimized
+        priority
         layout="responsive"
         loader={passthroughLoader}
       />
