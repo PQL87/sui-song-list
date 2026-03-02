@@ -22,6 +22,7 @@ import config, { filterSong, theme } from '../config/constants'
 
 import { 
   RetroWindow, 
+  RetroButton,
   RetroWindowContainer,
 } from '../components/retro/RetroWindow.component'
 import RetroSongList from '../components/retro/RetroSongList.component'
@@ -467,6 +468,10 @@ export default function Home() {
 
   const randomGeneratedWindows = createRandomWindows(TELL_ME_MESSAGES, RANDOM_WINDOW_COUNT);
   const closeLiveWindow = () => setLiveWindowsCount((count) => count - 1);
+  const backToDefaultTheme = () => {
+    localStorage.removeItem('theme');
+    location.reload();
+  };
 
   const suiStatus = useSuiStatus();
     
@@ -493,17 +498,22 @@ export default function Home() {
                 >
                   <RetroSongList songList={song_list} />
                 </RetroWindow>
-                <RetroWindow
-                  variant={variant}
-                  title={"README.md"}
-                  className="relative w-[30rem] top-[-130rem]"
-                  onClose={closeLiveWindow}
-                >
-                  <div className="space-y-2 text-[1.3rem]">
-                    <p className="text-title">{liverName}</p>
-                    <p>已收录的歌曲 {song_list.length} 首</p>
-                    <p>Livestream&nbsp;#25788785</p>
-                  </div>
+                <RetroWindow  
+                  variant={variant}  
+                  title={"README.md"}  
+                  className="relative w-[30rem] top-[-130rem]"  
+                  onClose={closeLiveWindow}  
+                >  
+                  <div className="space-y-2 text-[1.3rem]">  
+                    <p className="text-title">{liverName}</p>  
+                    <p>已收录的歌曲 {song_list.length} 首</p>  
+                    <p>Livestream&nbsp;#25788785</p>  
+                  </div>  
+                  <div className="mt-4">  
+                    <RetroButton onClick={backToDefaultTheme}>  
+                      <span className="text-neon-text-1">返回正常主题</span>  
+                    </RetroButton>  
+                  </div>  
                 </RetroWindow>
                 <NeonImageWindow
                   {...NEON_IMAGE_WINDOWS[3]}
