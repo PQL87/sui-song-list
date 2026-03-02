@@ -2,7 +2,7 @@ import React, { memo, useEffect, useRef, useState, useSyncExternalStore } from '
 
 import Head from 'next/head'
 import Link from 'next/link'
-import Image from "next/legacy/image"
+import Image from "next/image"
 
 import styles from '../styles/Home.module.css'
 import 'react-toastify/dist/ReactToastify.css'
@@ -298,7 +298,7 @@ function HeaderMedia({ theme }) {
         className="header-image"
         alt="header"
         unoptimized
-        priority
+        fetchPriority="high"
         layout="responsive"
         loader={passthroughLoader}
       />
