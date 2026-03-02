@@ -144,9 +144,6 @@ const NEON_IMAGE_WINDOWS = [
 
 const passthroughLoader = ({ src }) => src;
 const getHeaderImage = (themeName) => THEME_HEADER_IMAGES[themeName] || headerImage;
-const getShiningHeaderImage = (themeName) => (
-  themeName === 'shining' ? headerImageShiningFront : headerImageShining
-);
 const pickRandom = (messages) => messages[Math.floor(Math.random() * messages.length)];
 const createRandomWindows = (messages, count) => Array.from({ length: count }, () => ({
   title: pickRandom(messages),
@@ -193,28 +190,20 @@ const BackgroundView = () => {
   );
 };
 
-function subscribe(callback) {
-  window.addEventListener('storage', callback);
-  return () => window.removeEventListener('storage', callback);
-}
 
-function getSnapshot() {
-  return (window.localStorage.getItem('theme') || 'shining');
-}
-
-function getSuiSnapshot() {
-  return (JSON.parse(window.localStorage.getItem('sui')) || 'false');
-}
-
-export function useThemeName() {
-  return useSyncExternalStore(subscribe, getSnapshot, () => []);
-}
 
 export function useSuiStatus() {
-  return useSyncExternalStore(subscribe, getSuiSnapshot, () => []);
+  return useSyncExternalStore(
+    () => {
+      window.addEventListener('storage', callback);
+      return () => window.removeEventListener('storage', callback);
+    },
+    () => (JSON.parse(window.localStorage.getItem('sui')) || 'false'),
+    () => []
+  );
 }
 
-function ActivityImage({ selectTheme }) {
+function ShiningActivityImage() {
   const [isActive, setIsActive] = useState(false);
   const timerRef = useRef(null);
 
@@ -243,12 +232,11 @@ function ActivityImage({ selectTheme }) {
     };
   }, []);
 
-  const themeName = useThemeName();
 
   return (
     <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
       <Image
-        src={selectTheme(themeName)}
+        src={headerImageShiningFront}
         className={`header-image-front transition-opacity duration-500 ${!isActive ? 'z-[100] opacity-100' : 'opacity-0 pointer-events-none'}`}
         alt="header"
         unoptimized
@@ -297,7 +285,7 @@ function NeonBackground({ suiStatus }) {
   );
 }
 
-function HeaderMedia({ dynamicTheme, theme, themeName, videoRef }) {
+function HeaderMedia({ dynamicTheme, theme, videoRef }) {
   if (!dynamicTheme) {
     return (
       <Image
@@ -322,7 +310,7 @@ function HeaderMedia({ dynamicTheme, theme, themeName, videoRef }) {
       className="header-image relative right-0 top-0"
       width="100%"
     >
-      {renderDynamicSources(themeName)}
+      {renderDynamicSources(theme)}
     </video>
   );
 }
@@ -349,7 +337,23 @@ export default function Home() {
 
   const [ currently_playing ] = EffThis.currently_playing = useState(-1);
 
+  useEffect(() => {
+    if (!window.localStorage.getItem('theme')) {
+      window.localStorage.setItem('theme', 'shining');
+    }
+  }, []);
+
   const {theme, setTheme} = useTheme();
+
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === 'theme' && event.newValue !== null) {
+        setTheme(event.newValue)
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+  }, []);
 
   useEffect(() => {
     migrate_localstorage(song_list);
@@ -457,8 +461,6 @@ export default function Home() {
         });
     }
   }, [theme]);
-  
-  const themeName = useThemeName();
   const title = `${config.Name}的歌单`;
   const liverName = config.Name;
   
@@ -475,7 +477,7 @@ export default function Home() {
 
   const suiStatus = useSuiStatus();
     
-  if (themeName === 'neon') {
+  if (theme === 'neon') {
     return (
       <div data-theme={theme}>
         <PageHead title={title} />
@@ -582,13 +584,12 @@ export default function Home() {
           <HeaderMedia
             dynamicTheme={dynamicTheme}
             theme={theme}
-            themeName={themeName}
             videoRef={videoRef}
           />
         </div>
         {
-          themeName === 'shining' &&
-          <ActivityImage selectTheme={getShiningHeaderImage} />
+          theme === 'shining' &&
+          <ShiningActivityImage />
         }
         <section className={"main-section"}>
           <HeaderView props={[EffThis]}/>
