@@ -168,6 +168,11 @@ function PageHead({ title, includePreloads = false }) {
       />
       <meta name="description" content={`${config.Name}的歌单`} />
       <link rel="icon" type="image/x-icon" href="/favicon.png" />
+      <link
+        rel="preload"
+        href={getHeaderImage(theme)}
+        as="image"
+      />
       {includePreloads && PRELOAD_LINKS.map((link) => (
         <link
           key={link.href}
