@@ -299,6 +299,7 @@ function HeaderMedia({ theme }) {
         alt="header"
         unoptimized
         fetchPriority="high"
+        loading="eager"
         layout="responsive"
         loader={passthroughLoader}
       />
@@ -334,8 +335,41 @@ function HeaderMedia({ theme }) {
   );
 }
 
+function setThemeCookie(value) {
+  if (typeof document === 'undefined') return;
+  const encoded = encodeURIComponent(value);
+  const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `theme=${encoded}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+}
 
-export default function Home() {
+function clearThemeCookie() {
+  if (typeof document === 'undefined') return;
+  const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `theme=; path=/; max-age=0; SameSite=Lax${secure}`;
+}
+
+
+function parseCookieTheme(cookieHeader) {
+  if (!cookieHeader) return undefined;
+  const cookies = cookieHeader.split(';').map((part) => part.trim());
+  const themeCookie = cookies.find((cookie) => cookie.startsWith('theme='));
+  if (!themeCookie) return undefined;
+  const rawValue = themeCookie.slice('theme='.length);
+  const value = decodeURIComponent(rawValue);
+  if (!Object.prototype.hasOwnProperty.call(config.theme, value)) return undefined;
+  return value;
+}
+
+export async function getServerSideProps({ req, query }) {
+  const initialThemeName = parseCookieTheme(req?.headers?.cookie);
+  return {
+    props: {
+      initialThemeName: initialThemeName || 'shining',
+    },
+  };
+}
+
+export default function Home({ initialThemeName }) {
   // EffThis
   const [ EffThis ] = useState({
     set_current_album: (album) => {
@@ -357,12 +391,19 @@ export default function Home() {
   const [ currently_playing ] = EffThis.currently_playing = useState(-1);
 
   useEffect(() => {
-    if (!window.localStorage.getItem('theme')) {
+    const local_theme = window.localStorage.getItem('theme');
+
+    if (!local_theme) {
       window.localStorage.setItem('theme', 'shining');
+    }
+
+    if (initialThemeName && local_theme !== initialThemeName) {
+      window.localStorage.setItem('theme', initialThemeName);
     }
   }, []);
 
   const {theme, setTheme} = useTheme();
+  const resolvedTheme = theme ?? initialThemeName;
 
   useEffect(() => {
     const onStorage = (event) => {
@@ -410,6 +451,7 @@ export default function Home() {
     }
     EffThis.set_theme = (theme) => {
       setTheme(theme);
+      setThemeCookie(theme);
     }
     EffThis.current_theme = () => theme;
   }, [ EffThis, theme ]);
@@ -477,14 +519,15 @@ export default function Home() {
   const closeLiveWindow = () => setLiveWindowsCount((count) => count - 1);
   const backToDefaultTheme = () => {
     localStorage.removeItem('theme');
+    clearThemeCookie();
     location.reload();
   };
 
   const suiStatus = useSuiStatus();
     
-  if (theme === 'neon') {
+  if (resolvedTheme === 'neon') {
     return (
-      <div data-theme={theme}>
+      <div data-theme={resolvedTheme}>
         <PageHead title={title} />
         <NeonBackground suiStatus={suiStatus} />
         <section className="main-section absolute">
@@ -577,7 +620,7 @@ export default function Home() {
   }
   
   return (
-    <div data-theme={theme}>
+    <div data-theme={resolvedTheme}>
       <BackgroundView />
       <PageHead title={title} includePreloads />
 
@@ -587,11 +630,11 @@ export default function Home() {
       >
         <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
           <HeaderMedia
-            theme={theme}
+            theme={resolvedTheme}
           />
         </div>
         {
-          theme === 'shining' &&
+          resolvedTheme === 'shining' &&
           <ShiningActivityImage />
         }
         <section className={"main-section"}>
