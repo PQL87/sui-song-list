@@ -285,8 +285,8 @@ function NeonBackground({ suiStatus }) {
   );
 }
 
-function HeaderMedia({ dynamicTheme, theme, videoRef }) {
-  if (!dynamicTheme) {
+function HeaderMedia({ theme, videoRef }) {
+  if (!config.theme[theme].dynamic) {
     return (
       <Image
         src={getHeaderImage(theme)}
@@ -440,13 +440,10 @@ export default function Home() {
 
   }, [EffThis]);
 
-  const [dynamicTheme, setDynamicTheme] = useState(true);
   const videoRef = useRef(null);
   useEffect(() => {
-    setDynamicTheme(config.theme[theme].dynamic);
     upgrade_app('3.0.1', () => {
       EffThis.set_theme('neon');
-      setDynamicTheme(false);
     })
   }, [theme]);
 
@@ -456,7 +453,6 @@ export default function Home() {
         .play()
         .then(() => { })
         .catch((e) => {
-          setDynamicTheme(false);
           return e;
         });
     }
@@ -582,7 +578,6 @@ export default function Home() {
       >
         <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
           <HeaderMedia
-            dynamicTheme={dynamicTheme}
             theme={theme}
             videoRef={videoRef}
           />
