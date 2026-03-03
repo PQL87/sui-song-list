@@ -237,7 +237,7 @@ function ShiningActivityImage() {
     <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
       <Image
         src={headerImageShiningFront}
-        className={`header-image-front transition-opacity duration-500 ${!isActive ? 'z-[100] opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`header-image-front transition-opacity duration-500 ${!isActive ? 'absolute z-[100] opacity-100' : 'opacity-0 pointer-events-none'}`}
         alt="header"
         unoptimized
         layout="responsive"
