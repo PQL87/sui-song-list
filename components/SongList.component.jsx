@@ -83,11 +83,6 @@ const PillList = ({ props: [song_info, song_idx, BVID, EffThis,] }) => {
             set_is_favorite(!is_favorite);
             if (!is_favorite) {
               set_show_love(true);
-              navigator.sendBeacon('/api/v2/action', JSON.stringify({
-                action: "bookmark",
-                name: song_info.song_name,
-                timestamp: Date.now(),
-              }))
             }
           });
         }}
@@ -197,11 +192,6 @@ const CompactButtonList = ({ props: [songInfo, songIdx, BVID, EffThis,] }) => {
                 setIsFavorite(!isFavorite);
                 if (!isFavorite) {
                   setShowLove(true);
-                  navigator.sendBeacon('/api/v2/action', JSON.stringify({
-                    action: "bookmark",
-                    name: songInfo.song_name,
-                    timestamp: Date.now(),
-                  }));
                 }
               });
             }}
@@ -387,14 +377,6 @@ export default function SongList
                 text-base sm:hover:cursor-main-cursor"
                 onClick={() => {
                   global_controllers.copy_to_clipboard(songInfo.song_name);
-                  navigator.sendBeacon(
-                    "/api/v2/action",
-                    JSON.stringify({
-                      action: "copy",
-                      name: songInfo.song_name,
-                      timestamp: Date.now(),
-                    })
-                  );
                 }}
               >
                 <div className="flex flex-row items-center justify-between">
@@ -457,14 +439,6 @@ export default function SongList
                             event.stopPropagation();
                             global_controllers.copy_to_clipboard(
                               songInfo.song_translated_name
-                            );
-                            navigator.sendBeacon(
-                              "/api/v2/action",
-                              JSON.stringify({
-                                action: "copy",
-                                name: songInfo.song_name,
-                                timestamp: Date.now(),
-                              })
                             );
                           }}
                         >
