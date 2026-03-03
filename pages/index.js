@@ -285,7 +285,7 @@ function NeonBackground({ suiStatus }) {
   );
 }
 
-function HeaderMedia({ theme, videoRef }) {
+function HeaderMedia({ theme }) {
   if (!config.theme[theme]?.dynamic) {
     return (
       <Image
@@ -298,6 +298,19 @@ function HeaderMedia({ theme, videoRef }) {
       />
     );
   }
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current
+        .play()
+        .then(() => { })
+        .catch((e) => {
+          return e;
+        });
+    }
+  }, [theme]);
 
   return (
     <video
@@ -441,23 +454,12 @@ export default function Home() {
 
   }, [EffThis]);
 
-  const videoRef = useRef(null);
   useEffect(() => {
     upgrade_app('3.0.1', () => {
       EffThis.set_theme('neon');
     })
   }, [theme]);
 
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current
-        .play()
-        .then(() => { })
-        .catch((e) => {
-          return e;
-        });
-    }
-  }, [theme]);
   const title = `${config.Name}的歌单`;
   const liverName = config.Name;
   
@@ -580,7 +582,6 @@ export default function Home() {
         <div className="absolute right-0 top-0 w-full sm:w-[85%] 3xl:w-[75%] 4xl:w-[70%] 5xl:w-[65%]">
           <HeaderMedia
             theme={theme}
-            videoRef={videoRef}
           />
         </div>
         {
