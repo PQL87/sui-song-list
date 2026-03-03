@@ -353,6 +353,7 @@ export default function Home() {
     };
 
     window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   useEffect(() => {
