@@ -194,7 +194,7 @@ const BackgroundView = () => {
 
 export function useSuiStatus() {
   return useSyncExternalStore(
-    () => {
+    (callback) => {
       window.addEventListener('storage', callback);
       return () => window.removeEventListener('storage', callback);
     },
@@ -286,7 +286,7 @@ function NeonBackground({ suiStatus }) {
 }
 
 function HeaderMedia({ theme, videoRef }) {
-  if (!config.theme[theme].dynamic) {
+  if (!config.theme[theme]?.dynamic) {
     return (
       <Image
         src={getHeaderImage(theme)}
