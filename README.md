@@ -1,5 +1,12 @@
 # SUI的歌单网站
 
+> **⚠️ 本项目已归档 / DEPRECATED**
+> 
+> 请使用 [Tsingyun/sui-song-list-new](https://github.com/Tsingyun/sui-song-list-new)
+> 
+
+---
+
 岁己SUI的歌单网站。也可用于简单构建其他vup/vtb的个人歌单网站。
 
 > Fork自 [雨纪Ameki的歌单](https://www.ameki.online/)
